@@ -1,0 +1,706 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>VideoHub Pro - Gestión de Videos</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css">
+  <link href="assets/style.css" rel="stylesheet">
+</head>
+<body class="min-h-screen gradient-bg">
+  
+  <!-- Header -->
+  <header class="glass-effect shadow-lg sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-6 py-4">
+      <div class="flex items-center justify-between">
+        <div class="flex items-center space-x-3">
+          <div class="w-10 h-10 rounded-xl flex items-center justify-center">
+            <img src="assets/frut02.png">
+          </div>
+          <div>
+            <h1 class="text-2xl font-bold text-gray-800">Frut Video Glifer</h1>
+            <p class="text-sm text-gray-600">Gestión profesional de contenido multimedia</p>
+          </div>
+        </div>
+        
+        <div class="flex items-center space-x-4">
+          <div class="hidden md:flex items-center space-x-4 text-sm text-gray-600">
+            <span id="videoCount">0 videos</span>
+            <span>•</span>
+            <span id="totalSize">0 MB</span>
+          </div>
+          <button id="openModalBtn" class="bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center gap-2 shadow-lg">
+            <i class="fas fa-plus"></i>
+            <span class="hidden sm:inline">Subir Video</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="max-w-7xl mx-auto px-6 py-8">
+    
+    <!-- Stats Cards -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+      <div class="glass-effect rounded-2xl p-6 card-hover">
+        <div class="flex items-center">
+          <div class="w-12 h-12 bg-blue-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-video text-blue-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600">Total Videos</p>
+            <p id="statsVideoCount" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 card-hover">
+        <div class="flex items-center">
+          <div class="w-12 h-12 bg-purple-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-play-circle text-purple-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600">Reproducciones</p>
+            <p id="statsPlayCount" class="text-2xl font-bold text-gray-900">0</p>
+          </div>
+        </div>
+      </div>
+      
+      <div class="glass-effect rounded-2xl p-6 card-hover">
+        <div class="flex items-center">
+          <div class="w-12 h-12 bg-green-100 rounded-xl flex items-center justify-center">
+            <i class="fas fa-database text-green-600 text-lg"></i>
+          </div>
+          <div class="ml-4">
+            <p class="text-sm font-medium text-gray-600">Almacenamiento</p>
+            <p id="statsStorage" class="text-2xl font-bold text-gray-900">0 MB</p>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Search and Filter -->
+    <div class="glass-effect rounded-2xl p-6 mb-8">
+      <div class="flex flex-col md:flex-row gap-4">
+        <div class="flex-1">
+          <div class="relative">
+            <i class="fas fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+            <input type="text" id="searchInput" placeholder="Buscar videos..." 
+                   class="w-full pl-12 pr-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          </div>
+        </div>
+        <select id="sortSelect" class="px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent">
+          <option value="newest">Más recientes</option>
+          <option value="oldest">Más antiguos</option>
+          <option value="name">Por nombre</option>
+          <option value="duration">Por duración</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Videos Grid -->
+    <div class="glass-effect rounded-2xl p-6">
+      <h2 class="text-xl font-semibold text-gray-800 mb-6">Biblioteca de Videos</h2>
+      <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+        <!-- Videos will be loaded here -->
+      </div>
+      
+      <!-- Empty State -->
+      <div id="emptyState" class="text-center py-16 hidden">
+        <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
+          <i class="fas fa-video text-gray-400 text-3xl"></i>
+        </div>
+        <h3 class="text-xl font-semibold text-gray-800 mb-2">No hay videos aún</h3>
+        <p class="text-gray-600 mb-6">Comienza subiendo tu primer video para crear tu biblioteca multimedia</p>
+        <button class="openModalTrigger bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-3 px-6 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300">
+          <i class="fas fa-upload mr-2"></i>Subir Primer Video
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Upload Modal -->
+  <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50 p-4">
+    <div class="glass-effect rounded-3xl shadow-2xl w-full max-w-2xl p-8 relative animate-fade-in">
+      <button id="closeModalBtn" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
+        <i class="fas fa-times text-gray-600"></i>
+      </button>
+      
+      <div class="text-center mb-8">
+        <div class="w-16 h-16 bg-gradient-to-r from-blue-500 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <i class="fas fa-cloud-upload-alt text-white text-2xl"></i>
+        </div>
+        <h2 class="text-3xl font-bold text-gray-800 mb-2">Subir Video</h2>
+        <p class="text-gray-600">Tamaño máximo: 200MB • Formatos soportados: MP4, AVI, MOV</p>
+      </div>
+
+      <form id="uploadForm" class="space-y-6" action="upload.php" method="post" enctype="multipart/form-data">
+        
+        <!-- Drag & Drop Area -->
+        <div id="dropArea" class="upload-area rounded-2xl p-8 text-center cursor-pointer">
+          <div class="flex flex-col items-center">
+            <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
+            <p class="text-lg font-semibold text-gray-700 mb-2">Arrastra tu video aquí</p>
+            <p class="text-gray-500 mb-4">o haz clic para seleccionar</p>
+            <button type="button" class="bg-blue-100 text-blue-700 px-6 py-2 rounded-lg font-medium hover:bg-blue-200 transition-colors">
+              Seleccionar archivo
+            </button>
+          </div>
+          <input type="file" id="video" name="video" accept="video/*" required class="hidden">
+        </div>
+
+        <!-- File Info -->
+        <div id="fileInfo" class="bg-gray-50 rounded-xl p-4 hidden">
+          <div class="flex items-center justify-between">
+            <div class="flex items-center">
+              <i class="fas fa-video text-blue-500 mr-3"></i>
+              <div>
+                <p id="fileName" class="font-medium text-gray-800"></p>
+                <p id="fileSize" class="text-sm text-gray-600"></p>
+              </div>
+            </div>
+            <button type="button" id="removeFile" class="text-red-500 hover:text-red-700">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2" for="nombre">
+              <i class="fas fa-tag mr-2"></i>Nombre del video
+            </label>
+            <input type="text" id="nombre" name="nombre" required
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all"
+                   placeholder="Ingresa un nombre descriptivo">
+          </div>
+
+          <div>
+            <label class="block text-gray-700 font-semibold mb-2" for="duracion">
+              <i class="fas fa-clock mr-2"></i>Duración (segundos)
+            </label>
+            <input type="number" id="duracion" name="duracion" min="1" required placeholder="3600"
+                   class="w-full px-4 py-3 border border-gray-200 rounded-xl focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all">
+          </div>
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" id="submitBtn"
+                class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex justify-center items-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
+          <i class="fas fa-upload"></i>
+          <span id="submitText">Subir Video</span>
+        </button>
+      </form>
+
+      <!-- Progress Section -->
+      <div id="progressContainer" class="mt-8 hidden">
+        <div class="flex items-center justify-between mb-3">
+          <span class="text-sm font-medium text-gray-700">Subiendo video...</span>
+          <span id="progressText" class="text-sm font-medium text-blue-600">0%</span>
+        </div>
+        <div class="w-full bg-gray-200 rounded-full h-3 overflow-hidden">
+          <div id="progressBar" class="h-3 bg-gradient-to-r from-blue-500 to-purple-600 w-0 transition-all duration-300"></div>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div id="messages" class="mt-6"></div>
+    </div>
+  </div>
+
+  <!-- Floating Action Button (Mobile) -->
+  <button id="floatingBtn" class="floating-action md:hidden w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
+    <i class="fas fa-plus text-xl"></i>
+  </button>
+
+  <script>
+    // Initialize app
+    let allVideos = [];
+    let stats = { videoCount: 0, playCount: 0, totalSize: 0 };
+
+    // DOM Elements
+    const modal = document.getElementById('uploadModal');
+    const openModalBtns = document.querySelectorAll('#openModalBtn, #floatingBtn, .openModalTrigger');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const dropArea = document.getElementById('dropArea');
+    const fileInput = document.getElementById('video');
+    const fileInfo = document.getElementById('fileInfo');
+    const searchInput = document.getElementById('searchInput');
+    const sortSelect = document.getElementById('sortSelect');
+
+    // Modal Controls
+    openModalBtns.forEach(btn => {
+      btn.addEventListener('click', () => modal.classList.remove('hidden'));
+    });
+    
+    closeModalBtn.addEventListener('click', closeModal);
+    window.addEventListener('click', e => { 
+      if(e.target === modal) closeModal(); 
+    });
+
+    function closeModal() {
+      modal.classList.add('hidden');
+      document.getElementById('uploadForm').reset();
+      fileInfo.classList.add('hidden');
+      document.getElementById('progressContainer').classList.add('hidden');
+      document.getElementById('messages').innerHTML = '';
+    }
+
+    // Drag & Drop functionality
+    dropArea.addEventListener('click', () => fileInput.click());
+    dropArea.addEventListener('dragover', handleDragOver);
+    dropArea.addEventListener('dragleave', handleDragLeave);
+    dropArea.addEventListener('drop', handleDrop);
+    fileInput.addEventListener('change', handleFileSelect);
+
+    function handleDragOver(e) {
+      e.preventDefault();
+      dropArea.classList.add('drag-over');
+    }
+
+    function handleDragLeave(e) {
+      e.preventDefault();
+      dropArea.classList.remove('drag-over');
+    }
+
+    function handleDrop(e) {
+      e.preventDefault();
+      dropArea.classList.remove('drag-over');
+      const files = e.dataTransfer.files;
+      if (files.length > 0) {
+        fileInput.files = files;
+        showFileInfo(files[0]);
+      }
+    }
+
+    function handleFileSelect(e) {
+      const file = e.target.files[0];
+      if (file) showFileInfo(file);
+    }
+
+    function showFileInfo(file) {
+      document.getElementById('fileName').textContent = file.name;
+      document.getElementById('fileSize').textContent = formatFileSize(file.size);
+      fileInfo.classList.remove('hidden');
+      
+      // Auto-fill name if empty
+      const nameInput = document.getElementById('nombre');
+      if (!nameInput.value) {
+        nameInput.value = file.name.split('.')[0];
+      }
+    }
+
+    document.getElementById('removeFile').addEventListener('click', () => {
+      fileInput.value = '';
+      fileInfo.classList.add('hidden');
+    });
+
+    // Upload Form
+    (function(){
+      const MAX_BYTES = 200 * 1024 * 1024; // 200 MB
+      const form = document.getElementById('uploadForm');
+      const submitBtn = document.getElementById('submitBtn');
+      const submitText = document.getElementById('submitText');
+      const progressContainer = document.getElementById('progressContainer');
+      const progressBar = document.getElementById('progressBar');
+      const progressText = document.getElementById('progressText');
+      const messages = document.getElementById('messages');
+
+      form.addEventListener('submit', function(e){
+        e.preventDefault();
+        messages.innerHTML = '';
+
+        const file = fileInput.files[0];
+        if (!file) {
+          showMessage('warning', 'Selecciona un archivo primero.');
+          return;
+        }
+        if (file.size > MAX_BYTES) {
+          showMessage('error', 'El archivo supera el límite de 200MB.');
+          return;
+        }
+
+        submitBtn.disabled = true;
+        submitText.textContent = 'Subiendo...';
+        progressContainer.classList.remove('hidden');
+        progressBar.style.width = '0%';
+        progressText.textContent = '0%';
+
+        const formData = new FormData(form);
+        const xhr = new XMLHttpRequest();
+        xhr.open('POST', form.action);
+
+        xhr.upload.onprogress = function(e){
+          if(e.lengthComputable){
+            const percent = Math.round((e.loaded / e.total) * 100);
+            progressBar.style.width = percent + '%';
+            progressText.textContent = percent + '%';
+          }
+        };
+
+        xhr.onload = function(){
+          submitBtn.disabled = false;
+          submitText.textContent = 'Subir Video';
+          
+          if(xhr.status >= 200 && xhr.status < 300){
+            progressBar.style.width = '100%';
+            progressText.textContent = '100%';
+            showMessage('success', xhr.responseText);
+            form.reset();
+            fileInfo.classList.add('hidden');
+            cargarVideos();
+            setTimeout(() => closeModal(), 2000);
+          } else {
+            showMessage('error', `Error en la subida: ${xhr.status}`);
+          }
+        };
+
+        xhr.onerror = function(){
+          submitBtn.disabled = false;
+          submitText.textContent = 'Subir Video';
+          showMessage('error', 'Error de red durante la subida.');
+        };
+
+        xhr.send(formData);
+      });
+    })();
+
+    // Search and Filter
+    searchInput.addEventListener('input', filterVideos);
+    sortSelect.addEventListener('change', filterVideos);
+
+    function filterVideos() {
+      const query = searchInput.value.toLowerCase();
+      const sortBy = sortSelect.value;
+      
+      let filtered = allVideos.filter(video => 
+        video.nombre.toLowerCase().includes(query)
+      );
+
+      // Sort
+      switch(sortBy) {
+        case 'newest':
+          filtered.sort((a, b) => b.id - a.id);
+          break;
+        case 'oldest':
+          filtered.sort((a, b) => a.id - b.id);
+          break;
+        case 'name':
+          filtered.sort((a, b) => a.nombre.localeCompare(b.nombre));
+          break;
+        case 'duration':
+          filtered.sort((a, b) => b.duracion - a.duracion);
+          break;
+      }
+
+      renderVideos(filtered);
+    }
+
+    // Load and render videos
+    async function cargarVideos() {
+      try {
+        const res = await fetch("GetVideos.php");
+        allVideos = await res.json();
+        updateStats();
+        filterVideos();
+      } catch (err) {
+        console.error("Error al cargar videos:", err);
+        showMessage('error', 'Error al cargar la biblioteca de videos');
+      }
+    }
+
+    function renderVideos(videos) {
+      const container = document.getElementById("videoList");
+      const emptyState = document.getElementById("emptyState");
+      
+      if (videos.length === 0) {
+        container.innerHTML = '';
+        emptyState.classList.remove('hidden');
+        return;
+      }
+      
+      emptyState.classList.add('hidden');
+      container.innerHTML = '';
+
+      videos.forEach(video => {
+        const card = createVideoCard(video);
+        container.appendChild(card);
+      });
+    }
+
+    function createVideoCard(video) {
+      const card = document.createElement("div");
+      card.className = "video-card rounded-2xl shadow-lg card-hover overflow-hidden";
+
+      card.innerHTML = `
+        <div class="relative">
+          <video class="w-full h-48 object-cover" preload="metadata" muted>
+            <source src="${video.ruta}" type="video/mp4">
+          </video>
+          <div class="absolute inset-0 bg-black bg-opacity-0 hover:bg-opacity-30 transition-all duration-300 flex items-center justify-center opacity-0 hover:opacity-100">
+            <button class="playBtn w-16 h-16 bg-white bg-opacity-90 rounded-full flex items-center justify-center hover:bg-opacity-100 transition-all">
+              <i class="fas fa-play text-gray-800 ml-1"></i>
+            </button>
+          </div>
+          <div class="absolute top-4 right-4">
+            <span class="bg-black bg-opacity-70 text-white text-xs px-2 py-1 rounded-full">
+              ${formatDuration(video.duracion)}
+            </span>
+          </div>
+        </div>
+        
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-gray-800 mb-2 truncate">${video.nombre}</h3>
+          <div class="flex items-center justify-between text-sm text-gray-600 mb-4">
+            <span><i class="fas fa-clock mr-1"></i>${formatDuration(video.duracion)}</span>
+            <span><i class="fas fa-file-video mr-1"></i>ID: ${video.id}</span>
+          </div>
+          
+          <div class="flex items-center gap-2">
+            <button class="playBtn flex-1 bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-2 px-3 rounded-lg hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center gap-2 text-sm">
+              <i class="fas fa-play"></i>
+              Reproducir
+            </button>
+            <button class="deleteBtn w-10 h-10 bg-red-100 hover:bg-red-200 rounded-lg flex items-center justify-center transition-colors group" title="Eliminar video">
+              <i class="fas fa-trash text-red-600 group-hover:text-red-700"></i>
+            </button>
+            <button class="downloadBtn w-10 h-10 bg-gray-100 hover:bg-gray-200 rounded-lg flex items-center justify-center transition-colors" title="Descargar" onclick="window.open('${video.ruta}', '_blank')">
+              <i class="fas fa-download text-gray-600"></i>
+            </button>
+          </div>
+        </div>
+      `;
+
+      // Agregar event listeners para los botones
+      const playBtn = card.querySelector('.playBtn');
+      const deleteBtn = card.querySelector('.deleteBtn');
+      
+      playBtn.addEventListener("click", () => registrarPlayback(video));
+      deleteBtn.addEventListener("click", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        eliminarVideo(video);
+      });
+
+      return card;
+    }
+
+    // Función para eliminar video
+    async function eliminarVideo(video) {
+      // Mostrar modal de confirmación
+      const confirmed = await showConfirmDialog(
+        'Eliminar Video',
+        `¿Estás seguro de que deseas eliminar "${video.nombre}"?`,
+        'Esta acción no se puede deshacer.'
+      );
+
+      if (!confirmed) return;
+
+      try {
+        const response = await fetch('delete_video.php', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: `id=${video.id}`
+        });
+
+        const result = await response.json();
+        
+        if (result.success) {
+          showToast(`Video "${video.nombre}" eliminado correctamente`, 'success');
+          // Actualizar la lista de videos
+          cargarVideos();
+        } else {
+          showToast(`Error al eliminar: ${result.error}`, 'error');
+        }
+      } catch (err) {
+        console.error('Error al eliminar video:', err);
+        showToast('Error de conexión al eliminar el video', 'error');
+      }
+    }
+
+    async function registrarPlayback(video) {
+      try {
+          const body = new URLSearchParams();
+          body.append("id", video.id);
+          body.append("nombre", video.nombre);
+          body.append("ruta", video.ruta);
+          body.append("duracion", video.duracion);
+
+          const res = await fetch("log_playback.php", {
+            method: "POST",
+            headers: { "Content-Type": "application/x-www-form-urlencoded" },
+            body: body.toString()
+          });
+
+          const data = await res.json();
+          if (data.success) {
+            stats.playCount++;
+            updateStats();
+            // Show toast notification instead of alert
+            showToast(`Reproduciendo: ${video.nombre}`, 'success');
+          } else {
+            console.error("Error desde servidor:", data.error);
+            showToast("Error al registrar reproducción", 'error');
+          }
+      } catch (err) {
+          console.error("Error registrando playback:", err);
+          showToast("Error de conexión", 'error');
+      }
+    }
+
+    // Utility functions
+    function updateStats() {
+      stats.videoCount = allVideos.length;
+      stats.totalSize = allVideos.reduce((sum, v) => sum + (v.size || 0), 0);
+      
+      document.getElementById('videoCount').textContent = `${stats.videoCount} videos`;
+      document.getElementById('totalSize').textContent = formatFileSize(stats.totalSize * 1024 * 1024);
+      document.getElementById('statsVideoCount').textContent = stats.videoCount;
+      document.getElementById('statsPlayCount').textContent = stats.playCount;
+      document.getElementById('statsStorage').textContent = formatFileSize(stats.totalSize * 1024 * 1024);
+    }
+
+    function formatFileSize(bytes) {
+      if (bytes === 0) return '0 B';
+      const k = 1024;
+      const sizes = ['B', 'KB', 'MB', 'GB'];
+      const i = Math.floor(Math.log(bytes) / Math.log(k));
+      return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function formatDuration(seconds) {
+      const hours = Math.floor(seconds / 3600);
+      const minutes = Math.floor((seconds % 3600) / 60);
+      const secs = seconds % 60;
+      
+      if (hours > 0) {
+        return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+      }
+      return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function showMessage(type, message) {
+      const messages = document.getElementById('messages');
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-times-circle',
+        warning: 'fa-exclamation-triangle'
+      };
+      const colors = {
+        success: 'bg-green-50 text-green-800 border-green-200',
+        error: 'bg-red-50 text-red-800 border-red-200',
+        warning: 'bg-yellow-50 text-yellow-800 border-yellow-200'
+      };
+      
+      messages.innerHTML = `
+        <div class="border rounded-xl p-4 ${colors[type]}">
+          <div class="flex items-center">
+            <i class="fas ${icons[type]} mr-2"></i>
+            <span>${message}</span>
+          </div>
+        </div>
+      `;
+    }
+
+    function showConfirmDialog(title, message, subtitle = '') {
+      return new Promise((resolve) => {
+        // Crear el modal de confirmación
+        const confirmModal = document.createElement('div');
+        confirmModal.className = 'fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[70] p-4';
+        
+        confirmModal.innerHTML = `
+          <div class="glass-effect rounded-2xl shadow-2xl w-full max-w-md p-6 animate-fade-in">
+            <div class="text-center mb-6">
+              <div class="w-16 h-16 rounded-full flex items-center justify-center mx-auto mb-4">
+                <img src="assets/frut02.png">
+              </div>
+              <h3 class="text-xl font-bold text-gray-800 mb-2">${title}</h3>
+              <p class="text-gray-700 mb-2">${message}</p>
+              ${subtitle ? `<p class="text-sm text-gray-500">${subtitle}</p>` : ''}
+            </div>
+            
+            <div class="flex gap-3">
+              <button id="cancelBtn" class="flex-1 bg-gray-100 text-gray-700 font-semibold py-3 rounded-lg hover:bg-gray-200 transition-colors">
+                Cancelar
+              </button>
+              <button id="confirmBtn" class="flex-1 bg-red-500 text-white font-semibold py-3 rounded-lg hover:bg-red-600 transition-colors">
+                Eliminar
+              </button>
+            </div>
+          </div>
+        `;
+        
+        document.body.appendChild(confirmModal);
+        
+        // Event listeners
+        const cancelBtn = confirmModal.querySelector('#cancelBtn');
+        const confirmBtn = confirmModal.querySelector('#confirmBtn');
+        
+        const cleanup = () => {
+          document.body.removeChild(confirmModal);
+        };
+        
+        cancelBtn.addEventListener('click', () => {
+          cleanup();
+          resolve(false);
+        });
+        
+        confirmBtn.addEventListener('click', () => {
+          cleanup();
+          resolve(true);
+        });
+        
+        // Cerrar con ESC
+        const handleEscape = (e) => {
+          if (e.key === 'Escape') {
+            cleanup();
+            resolve(false);
+            document.removeEventListener('keydown', handleEscape);
+          }
+        };
+        document.addEventListener('keydown', handleEscape);
+      });
+    }
+
+    function showToast(message, type = 'info') {
+      // Create toast element
+      const toast = document.createElement('div');
+      toast.className = `fixed top-4 right-4 z-[60] max-w-sm p-4 rounded-xl shadow-2xl transform translate-x-full transition-all duration-300`;
+      
+      const colors = {
+        success: 'bg-green-500 text-white',
+        error: 'bg-red-500 text-white',
+        info: 'bg-blue-500 text-white'
+      };
+      
+      toast.classList.add(...colors[type].split(' '));
+      toast.innerHTML = `
+        <div class="flex items-center">
+          <i class="fas fa-${type === 'success' ? 'check' : type === 'error' ? 'times' : 'info'} mr-2"></i>
+          <span>${message}</span>
+        </div>
+      `;
+      
+      document.body.appendChild(toast);
+      
+      // Animate in
+      setTimeout(() => toast.classList.remove('translate-x-full'), 100);
+      
+      // Remove after 3 seconds
+      setTimeout(() => {
+        toast.classList.add('translate-x-full');
+        setTimeout(() => document.body.removeChild(toast), 300);
+      }, 3000);
+    }
+
+    // Initialize app
+    cargarVideos();
+  </script>
+
+</body>
+</html>
