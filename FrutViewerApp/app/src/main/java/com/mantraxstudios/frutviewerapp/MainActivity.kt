@@ -33,8 +33,8 @@ import java.net.URL
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CompletableDeferred
 
-val serverIP: String = "http://192.168.1.19/FrutFrut/GetVideos.php"
-val baseUrl = "http://192.168.1.19/FrutFrut/"
+val serverIP: String = "http://192.168.1.19/FrutFrutApp/GetVideos.php"
+val baseUrl = "http://192.168.1.19/FrutFrutApp/"
 
 data class VideoInfo(
     val nombre: String,
@@ -52,6 +52,7 @@ class MainActivity : ComponentActivity() {
 
     private var currentIndex = 0
     private var playerListener: Player.Listener? = null
+    private var lastPlayStamp: String? = null  // 🔥 Evita repetir
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -143,6 +144,7 @@ class MainActivity : ComponentActivity() {
                         if (videoList.isNotEmpty()) {
                             isReady = true
                             startLoop { status -> progressText = status }
+                            startPlaybackChecker() // 🔥 Chequeo cada 10s
                         } else {
                             progressText = "No hay videos disponibles"
                         }
@@ -277,7 +279,6 @@ class MainActivity : ComponentActivity() {
 
                 val item = MediaItem.fromUri(Uri.fromFile(localFile))
 
-                // Pequeño delay para asegurar que el archivo está listo
                 delay(100)
 
                 player?.setMediaItem(item)
@@ -296,7 +297,6 @@ class MainActivity : ComponentActivity() {
                 }
                 player?.addListener(playerListener!!)
 
-                // Limitar la reproducción al tiempo de la API
                 try {
                     withTimeout(video.duracion * 1000L) {
                         videoFinished.await()
@@ -318,13 +318,79 @@ class MainActivity : ComponentActivity() {
             val localFile = File(videoDir, video.nombre + ".mp4")
             if (!localFile.exists() || localFile.length() == 0L) return@launch
 
-            Log.i("PLAYER", "▶ Cambio manual: ${video.nombre}")
+            Log.i("PLAYER", "▶ Cambio inmediato a: ${video.nombre}")
+
+            player?.stop()
 
             val item = MediaItem.fromUri(Uri.fromFile(localFile))
             delay(100)
             player?.setMediaItem(item)
             player?.prepare()
             player?.play()
+        }
+    }
+
+    // 🔥 Nuevo: consulta periódica de último playback
+    private suspend fun fetchLastPlayback(): Pair<VideoInfo, String>? = withContext(Dispatchers.IO) {
+        try {
+            val url = URL(baseUrl + "get_last_playback.php")
+            val conn = url.openConnection() as HttpURLConnection
+            conn.connectTimeout = 3000
+            conn.readTimeout = 3000
+            conn.requestMethod = "GET"
+            conn.connect()
+
+            if (conn.responseCode != HttpURLConnection.HTTP_OK) return@withContext null
+
+            val response = conn.inputStream.bufferedReader().use { it.readText() }
+            val json = JSONObject(response)
+            if (!json.getBoolean("success")) return@withContext null
+
+            val data = json.getJSONObject("data")
+            val nombre = data.getString("nombre")
+            val ruta = data.getString("ruta")
+            val duracion = data.getString("duracion").toInt()
+            val playStamp = data.getString("play_stamp")
+
+            return@withContext Pair(VideoInfo(nombre, ruta, duracion), playStamp)
+        } catch (e: Exception) {
+            Log.e("PLAYBACK", "Error obteniendo último playback: ${e.message}", e)
+            null
+        }
+    }
+
+    private fun startPlaybackChecker() {
+        scope.launch {
+            while (isActive) {
+                val result = fetchLastPlayback()
+                if (result != null) {
+                    val (video, playStamp) = result
+                    if (lastPlayStamp != playStamp) {
+                        lastPlayStamp = playStamp
+                        val localFile = File(videoDir, video.nombre + ".mp4")
+
+                        if (!localFile.exists()) {
+                            Log.i("CHECKER", "Descargando nuevo video: ${video.nombre}")
+                            withContext(Dispatchers.IO) {
+                                downloadFile(baseUrl + video.ruta, localFile)
+                            }
+                        }
+
+                        if (localFile.exists()) {
+                            Log.i("CHECKER", "Reproduciendo video detectado: ${video.nombre}")
+                            player?.stop()
+                            val item = MediaItem.fromUri(Uri.fromFile(localFile))
+                            delay(100)
+                            player?.setMediaItem(item)
+                            player?.prepare()
+                            player?.play()
+                        } else {
+                            Log.w("CHECKER", "No se pudo reproducir, archivo faltante: ${video.nombre}")
+                        }
+                    }
+                }
+                delay(10_000)
+            }
         }
     }
 
