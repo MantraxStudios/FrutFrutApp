@@ -10,7 +10,6 @@
 </head>
 <body class="min-h-screen gradient-bg">
   
-  <!-- Header -->
   <header class="glass-effect shadow-lg sticky top-0 z-40">
     <div class="max-w-7xl mx-auto px-6 py-4">
       <div class="flex items-center justify-between">
@@ -39,10 +38,8 @@
     </div>
   </header>
 
-  <!-- Main Content -->
   <main class="max-w-7xl mx-auto px-6 py-8">
     
-    <!-- Stats Cards -->
     <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
       <div class="glass-effect rounded-2xl p-6 card-hover">
         <div class="flex items-center">
@@ -81,7 +78,6 @@
       </div>
     </div>
 
-    <!-- Search and Filter -->
     <div class="glass-effect rounded-2xl p-6 mb-8">
       <div class="flex flex-col md:flex-row gap-4">
         <div class="flex-1">
@@ -100,14 +96,11 @@
       </div>
     </div>
 
-    <!-- Videos Grid -->
     <div class="glass-effect rounded-2xl p-6">
       <h2 class="text-xl font-semibold text-gray-800 mb-6">Biblioteca de Videos</h2>
       <div id="videoList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
-        <!-- Videos will be loaded here -->
       </div>
       
-      <!-- Empty State -->
       <div id="emptyState" class="text-center py-16 hidden">
         <div class="w-24 h-24 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-6">
           <i class="fas fa-video text-gray-400 text-3xl"></i>
@@ -121,7 +114,6 @@
     </div>
   </main>
 
-  <!-- Upload Modal -->
   <div id="uploadModal" class="fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center hidden z-50 p-4">
     <div class="glass-effect rounded-3xl shadow-2xl w-full max-w-2xl p-8 relative animate-fade-in">
       <button id="closeModalBtn" class="absolute top-6 right-6 w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 flex items-center justify-center transition-colors">
@@ -138,7 +130,6 @@
 
       <form id="uploadForm" class="space-y-6" action="upload.php" method="post" enctype="multipart/form-data">
         
-        <!-- Drag & Drop Area -->
         <div id="dropArea" class="upload-area rounded-2xl p-8 text-center cursor-pointer">
           <div class="flex flex-col items-center">
             <i class="fas fa-cloud-upload-alt text-4xl text-gray-400 mb-4"></i>
@@ -151,7 +142,6 @@
           <input type="file" id="video" name="video" accept="video/*" required class="hidden">
         </div>
 
-        <!-- File Info -->
         <div id="fileInfo" class="bg-gray-50 rounded-xl p-4 hidden">
           <div class="flex items-center justify-between">
             <div class="flex items-center">
@@ -167,7 +157,6 @@
           </div>
         </div>
 
-        <!-- Form Fields -->
         <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <label class="block text-gray-700 font-semibold mb-2" for="nombre">
@@ -187,7 +176,6 @@
           </div>
         </div>
 
-        <!-- Submit Button -->
         <button type="submit" id="submitBtn"
                 class="w-full bg-gradient-to-r from-blue-500 to-purple-600 text-white font-semibold py-4 rounded-xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex justify-center items-center gap-3 text-lg disabled:opacity-50 disabled:cursor-not-allowed">
           <i class="fas fa-upload"></i>
@@ -195,7 +183,6 @@
         </button>
       </form>
 
-      <!-- Progress Section -->
       <div id="progressContainer" class="mt-8 hidden">
         <div class="flex items-center justify-between mb-3">
           <span class="text-sm font-medium text-gray-700">Subiendo video...</span>
@@ -211,17 +198,14 @@
     </div>
   </div>
 
-  <!-- Floating Action Button (Mobile) -->
   <button id="floatingBtn" class="floating-action md:hidden w-14 h-14 bg-gradient-to-r from-blue-500 to-purple-600 text-white rounded-full shadow-2xl hover:from-blue-600 hover:to-purple-700 transition-all duration-300 flex items-center justify-center">
     <i class="fas fa-plus text-xl"></i>
   </button>
 
   <script>
-    // Initialize app
     let allVideos = [];
     let stats = { videoCount: 0, playCount: 0, totalSize: 0 };
 
-    // DOM Elements
     const modal = document.getElementById('uploadModal');
     const openModalBtns = document.querySelectorAll('#openModalBtn, #floatingBtn, .openModalTrigger');
     const closeModalBtn = document.getElementById('closeModalBtn');
@@ -249,7 +233,6 @@
       document.getElementById('messages').innerHTML = '';
     }
 
-    // Drag & Drop functionality
     dropArea.addEventListener('click', () => fileInput.click());
     dropArea.addEventListener('dragover', handleDragOver);
     dropArea.addEventListener('dragleave', handleDragLeave);
@@ -286,7 +269,6 @@
       document.getElementById('fileSize').textContent = formatFileSize(file.size);
       fileInfo.classList.remove('hidden');
       
-      // Auto-fill name if empty
       const nameInput = document.getElementById('nombre');
       if (!nameInput.value) {
         nameInput.value = file.name.split('.')[0];
@@ -298,9 +280,8 @@
       fileInfo.classList.add('hidden');
     });
 
-    // Upload Form
     (function(){
-      const MAX_BYTES = 200 * 1024 * 1024; // 200 MB
+      const MAX_BYTES = 200 * 1024 * 1024; 
       const form = document.getElementById('uploadForm');
       const submitBtn = document.getElementById('submitBtn');
       const submitText = document.getElementById('submitText');
@@ -368,7 +349,6 @@
       });
     })();
 
-    // Search and Filter
     searchInput.addEventListener('input', filterVideos);
     sortSelect.addEventListener('change', filterVideos);
 
@@ -380,7 +360,6 @@
         video.nombre.toLowerCase().includes(query)
       );
 
-      // Sort
       switch(sortBy) {
         case 'newest':
           filtered.sort((a, b) => b.id - a.id);
@@ -399,7 +378,6 @@
       renderVideos(filtered);
     }
 
-    // Load and render videos
     async function cargarVideos() {
       try {
         const res = await fetch("GetVideos.php");
@@ -474,7 +452,6 @@
         </div>
       `;
 
-      // Agregar event listeners para los botones
       const playBtn = card.querySelector('.playBtn');
       const deleteBtn = card.querySelector('.deleteBtn');
       
@@ -488,9 +465,7 @@
       return card;
     }
 
-    // Función para eliminar video
     async function eliminarVideo(video) {
-      // Mostrar modal de confirmación
       const confirmed = await showConfirmDialog(
         'Eliminar Video',
         `¿Estás seguro de que deseas eliminar "${video.nombre}"?`,
@@ -512,7 +487,6 @@
         
         if (result.success) {
           showToast(`Video "${video.nombre}" eliminado correctamente`, 'success');
-          // Actualizar la lista de videos
           cargarVideos();
         } else {
           showToast(`Error al eliminar: ${result.error}`, 'error');
@@ -541,7 +515,6 @@
           if (data.success) {
             stats.playCount++;
             updateStats();
-            // Show toast notification instead of alert
             showToast(`Reproduciendo: ${video.nombre}`, 'success');
           } else {
             console.error("Error desde servidor:", data.error);
@@ -553,7 +526,6 @@
       }
     }
 
-    // Utility functions
     function updateStats() {
       stats.videoCount = allVideos.length;
       stats.totalSize = allVideos.reduce((sum, v) => sum + (v.size || 0), 0);
@@ -609,7 +581,6 @@
 
     function showConfirmDialog(title, message, subtitle = '') {
       return new Promise((resolve) => {
-        // Crear el modal de confirmación
         const confirmModal = document.createElement('div');
         confirmModal.className = 'fixed inset-0 bg-black bg-opacity-60 flex justify-center items-center z-[70] p-4';
         
@@ -636,8 +607,7 @@
         `;
         
         document.body.appendChild(confirmModal);
-        
-        // Event listeners
+
         const cancelBtn = confirmModal.querySelector('#cancelBtn');
         const confirmBtn = confirmModal.querySelector('#confirmBtn');
         
@@ -655,7 +625,6 @@
           resolve(true);
         });
         
-        // Cerrar con ESC
         const handleEscape = (e) => {
           if (e.key === 'Escape') {
             cleanup();
@@ -668,7 +637,6 @@
     }
 
     function showToast(message, type = 'info') {
-      // Create toast element
       const toast = document.createElement('div');
       toast.className = `fixed top-4 right-4 z-[60] max-w-sm p-4 rounded-xl shadow-2xl transform translate-x-full transition-all duration-300`;
       
@@ -688,17 +656,14 @@
       
       document.body.appendChild(toast);
       
-      // Animate in
       setTimeout(() => toast.classList.remove('translate-x-full'), 100);
       
-      // Remove after 3 seconds
       setTimeout(() => {
         toast.classList.add('translate-x-full');
         setTimeout(() => document.body.removeChild(toast), 300);
       }, 3000);
     }
 
-    // Initialize app
     cargarVideos();
   </script>
 

@@ -1,5 +1,5 @@
 <?php
-require 'db.php'; // PDO connection
+require 'db.php';
 
 $stmt = $pdo->query("SELECT id, nombre, ruta, duracion FROM videos ORDER BY id ASC");
 $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -42,7 +42,6 @@ const muteBtn = document.getElementById('muteBtn');
 
 player.volume = parseFloat(volumeControl.value);
 
-// Función para reproducir un video
 function playVideo(index){
     if(index >= videos.length){
         titleEl.textContent = "¡Fin de la lista!";
@@ -70,27 +69,22 @@ function playVideo(index){
         }
     }, 1000);
 
-    // Forzar autoplay
     player.play().catch(()=>{
-        // Si bloquea autoplay con audio
         player.muted = true;
         player.play().catch(()=>{});
     });
 }
 
-// Cambiar volumen con slider
 volumeControl.addEventListener('input', ()=>{
     player.volume = parseFloat(volumeControl.value);
     if(player.volume > 0) player.muted = false;
 });
 
-// Botón mute/unmute
 muteBtn.addEventListener('click', ()=>{
     player.muted = !player.muted;
     muteBtn.textContent = player.muted ? 'Unmute' : 'Mute';
 });
 
-// Iniciar primer video automáticamente
 if(videos.length > 0){
     playVideo(currentIndex);
 } else {

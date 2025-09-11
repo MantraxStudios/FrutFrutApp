@@ -1,14 +1,12 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
 
-require 'db.php'; // Tu archivo PDO con conexión $pdo
+require 'db.php'; 
 
 try {
-    // Traer todos los videos ordenados por ID
     $stmt = $pdo->query("SELECT id, nombre, ruta, duracion FROM videos ORDER BY id ASC");
     $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    // Devolver solo los campos que necesitamos
     $result = [];
     foreach ($videos as $v) {
         $result[] = [

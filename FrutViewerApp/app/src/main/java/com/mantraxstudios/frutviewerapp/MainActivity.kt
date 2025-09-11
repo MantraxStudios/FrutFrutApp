@@ -33,8 +33,8 @@ import java.net.URL
 import kotlinx.coroutines.TimeoutCancellationException
 import kotlinx.coroutines.CompletableDeferred
 
-val serverIP: String = "http://192.168.1.19/FrutFrutApp/GetVideos.php"
-val baseUrl = "http://192.168.1.19/FrutFrutApp/"
+val serverIP: String = "http://vds.srcardboard.cl/GetVideos.php"
+val baseUrl = "http://vds.srcardboard.cl/"
 
 data class VideoInfo(
     val nombre: String,
@@ -52,7 +52,8 @@ class MainActivity : ComponentActivity() {
 
     private var currentIndex = 0
     private var playerListener: Player.Listener? = null
-    private var lastPlayStamp: String? = null  // 🔥 Evita repetir
+    private var lastPlayStamp: String? = null
+    private var progressText = mutableStateOf("Sincronizando con servidor...")
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -65,9 +66,9 @@ class MainActivity : ComponentActivity() {
         setContent {
             FrutViewerAppTheme {
                 Surface(modifier = Modifier.fillMaxSize()) {
-                    var progressText by remember { mutableStateOf("Sincronizando con servidor...") }
                     var isReady by remember { mutableStateOf(false) }
                     var menuExpanded by remember { mutableStateOf(false) }
+                    val currentProgressText by progressText
 
                     Box(modifier = Modifier.fillMaxSize()) {
                         if (player != null && isReady) {
@@ -110,7 +111,7 @@ class MainActivity : ComponentActivity() {
                             }
                         } else {
                             Text(
-                                text = progressText,
+                                text = currentProgressText,
                                 modifier = Modifier.align(Alignment.Center)
                             )
                         }
@@ -129,24 +130,16 @@ class MainActivity : ComponentActivity() {
                             loadVideosFromFile()
                         }
 
-                        // Descargar videos faltantes
-                        for (video in videoList) {
-                            val localFile = File(videoDir, video.nombre + ".mp4")
-                            if (!localFile.exists()) {
-                                progressText = "Descargando ${video.nombre}..."
-                                withContext(Dispatchers.IO) {
-                                    downloadFile(baseUrl + video.ruta, localFile)
-                                }
-                                Log.i("DOWNLOAD", "${video.nombre} descargado")
-                            }
-                        }
+                        // Descargar videos faltantes inicial
+                        downloadMissingVideos()
 
                         if (videoList.isNotEmpty()) {
                             isReady = true
-                            startLoop { status -> progressText = status }
-                            startPlaybackChecker() // 🔥 Chequeo cada 10s
+                            startLoop()
+                            startPlaybackChecker()
+                            startPeriodicSync() // 🔥 Sincronización periódica
                         } else {
-                            progressText = "No hay videos disponibles"
+                            progressText.value = "No hay videos disponibles"
                         }
                     }
                 }
@@ -212,19 +205,93 @@ class MainActivity : ComponentActivity() {
                     }
                 }
             }
+            Log.i("DOWNLOAD", "Descarga completada: ${outputFile.name}")
         } catch (e: Exception) {
             Log.e("DOWNLOAD", "Error descargando archivo: ${e.message}", e)
         }
     }
 
-    private fun syncLocalWithServer(serverVideos: List<VideoInfo>) {
+    // 🔥 Mejorada: detecta nuevos videos y los añade
+    private suspend fun syncLocalWithServer(serverVideos: List<VideoInfo>) {
         Log.i("SYNC", "Sincronizando con servidor...")
-        videoList.clear()
-        for (serverVideo in serverVideos) {
-            videoList.add(serverVideo)
+
+        val currentVideoNames = videoList.map { it.nombre }.toSet()
+        val serverVideoNames = serverVideos.map { it.nombre }.toSet()
+
+        // Detectar nuevos videos en el servidor
+        val newVideos = serverVideos.filter { it.nombre !in currentVideoNames }
+
+        if (newVideos.isNotEmpty()) {
+            Log.i("SYNC", "Detectados ${newVideos.size} videos nuevos")
+
+            // Añadir nuevos videos a la lista
+            for (newVideo in newVideos) {
+                videoList.add(newVideo)
+                Log.i("SYNC", "Añadido nuevo video: ${newVideo.nombre}")
+            }
+
+            // Guardar la lista actualizada
+            saveVideosToFile()
+
+            // Descargar los nuevos videos
+            for (newVideo in newVideos) {
+                val localFile = File(videoDir, newVideo.nombre + ".mp4")
+                if (!localFile.exists()) {
+                    progressText.value = "Descargando nuevo video: ${newVideo.nombre}..."
+                    withContext(Dispatchers.IO) {
+                        downloadFile(baseUrl + newVideo.ruta, localFile)
+                    }
+                }
+            }
         }
-        saveVideosToFile()
+
+        // Detectar videos eliminados del servidor (opcional)
+        val removedVideos = videoList.filter { it.nombre !in serverVideoNames }
+        if (removedVideos.isNotEmpty()) {
+            Log.i("SYNC", "Detectados ${removedVideos.size} videos eliminados del servidor")
+            // Opcional: eliminar videos que ya no están en el servidor
+            videoList.removeAll(removedVideos)
+            saveVideosToFile()
+        }
+
         Log.i("SYNC", "Sincronización completada. Playlist: ${videoList.size} videos")
+    }
+
+    // 🔥 Función separada para descargar videos faltantes
+    private suspend fun downloadMissingVideos() {
+        for (video in videoList) {
+            val localFile = File(videoDir, video.nombre + ".mp4")
+            if (!localFile.exists()) {
+                progressText.value = "Descargando ${video.nombre}..."
+                withContext(Dispatchers.IO) {
+                    downloadFile(baseUrl + video.ruta, localFile)
+                }
+                Log.i("DOWNLOAD", "${video.nombre} descargado")
+            }
+        }
+    }
+
+    // 🔥 Sincronización periódica cada 30 segundos
+    private fun startPeriodicSync() {
+        scope.launch {
+            while (isActive) {
+                delay(30_000) // Esperar 30 segundos
+
+                val serverVideos = withTimeoutOrNull(5000) { fetchVideos() }
+                if (serverVideos != null) {
+                    val currentCount = videoList.size
+                    syncLocalWithServer(serverVideos)
+
+                    if (videoList.size > currentCount) {
+                        // Se añadieron nuevos videos, descargarlos
+                        downloadMissingVideos()
+                        Log.i("PERIODIC_SYNC", "Nuevos videos sincronizados y descargados")
+                    }
+                } else {
+                    Log.w("PERIODIC_SYNC", "No se pudo conectar al servidor para sincronización")
+                }
+            }
+        }
     }
 
     private fun saveVideosToFile() {
@@ -261,7 +328,7 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    private fun startLoop(onStatus: (String) -> Unit) {
+    private fun startLoop() {
         scope.launch {
             while (isActive) {
                 if (videoList.isEmpty()) { delay(1000); continue }
@@ -275,7 +342,7 @@ class MainActivity : ComponentActivity() {
                     continue
                 }
 
-                onStatus("Reproduciendo ${video.nombre} (${video.duracion}s)")
+                progressText.value = "Reproduciendo ${video.nombre} (${video.duracion}s)"
 
                 val item = MediaItem.fromUri(Uri.fromFile(localFile))
 
@@ -330,7 +397,6 @@ class MainActivity : ComponentActivity() {
         }
     }
 
-    // 🔥 Nuevo: consulta periódica de último playback
     private suspend fun fetchLastPlayback(): Pair<VideoInfo, String>? = withContext(Dispatchers.IO) {
         try {
             val url = URL(baseUrl + "get_last_playback.php")
@@ -369,8 +435,17 @@ class MainActivity : ComponentActivity() {
                         lastPlayStamp = playStamp
                         val localFile = File(videoDir, video.nombre + ".mp4")
 
+                        // Verificar si el video está en la lista, si no, añadirlo
+                        val existingVideo = videoList.find { it.nombre == video.nombre }
+                        if (existingVideo == null) {
+                            Log.i("CHECKER", "Nuevo video detectado desde playback: ${video.nombre}")
+                            videoList.add(video)
+                            saveVideosToFile()
+                        }
+
                         if (!localFile.exists()) {
                             Log.i("CHECKER", "Descargando nuevo video: ${video.nombre}")
+                            progressText.value = "Descargando video solicitado: ${video.nombre}..."
                             withContext(Dispatchers.IO) {
                                 downloadFile(baseUrl + video.ruta, localFile)
                             }

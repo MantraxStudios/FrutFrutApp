@@ -1,6 +1,6 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require 'db.php'; // conexión $pdo con PDO
+require 'db.php'; 
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $id       = $_POST['id'] ?? null;

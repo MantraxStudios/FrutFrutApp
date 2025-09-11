@@ -1,5 +1,5 @@
 <?php
-require 'db.php'; // incluimos la conexión PDO
+require 'db.php';
 
 if ($_SERVER["REQUEST_METHOD"] == "POST") {
     $id = $_POST['id'];

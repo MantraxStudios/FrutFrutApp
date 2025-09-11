@@ -1,7 +1,7 @@
 <?php
-require 'db.php'; // conexión PDO (usa $pdo)
+require 'db.php'; 
 
-$maxSize = 200 * 1024 * 1024; // 200MB
+$maxSize = 200 * 1024 * 1024;
 
 if (!isset($_FILES['video'])) {
     die("No se envió ningún archivo.");
@@ -11,7 +11,6 @@ $nombre   = trim($_POST['nombre'] ?? '');
 $duracion = intval($_POST['duracion'] ?? 0);
 $archivo  = $_FILES['video'];
 
-// validar datos
 if ($archivo['error'] !== UPLOAD_ERR_OK) {
     die("Error en la subida (código {$archivo['error']}).");
 }
@@ -24,13 +23,11 @@ if ($duracion <= 0) {
     die("Duración inválida. Ingresa un número mayor a 0.");
 }
 
-// carpeta destino
 $uploadDir = __DIR__ . '/uploads/';
 if (!is_dir($uploadDir)) {
     mkdir($uploadDir, 0777, true);
 }
 
-// nombre único
 $ext = pathinfo($archivo['name'], PATHINFO_EXTENSION);
 $filename = time() . '_' . bin2hex(random_bytes(6)) . ($ext ? '.' . $ext : '');
 $rutaServidor = $uploadDir . $filename;
@@ -40,7 +37,6 @@ if (!move_uploaded_file($archivo['tmp_name'], $rutaServidor)) {
     die("Error al mover el archivo.");
 }
 
-// guardar en DB
 try {
     $sql = "INSERT INTO videos (nombre, ruta, duracion) VALUES (:nombre, :ruta, :duracion)";
     $stmt = $pdo->prepare($sql);

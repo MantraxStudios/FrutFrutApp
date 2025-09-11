@@ -1,9 +1,8 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-require 'db.php'; // conexión $pdo con PDO
+require 'db.php'; 
 
 try {
-    // Obtener el último registro ordenando por play_stamp descendente
     $stmt = $pdo->query("SELECT id, nombre, ruta, duracion, play_stamp FROM playback ORDER BY play_stamp DESC LIMIT 1");
     $last = $stmt->fetch(PDO::FETCH_ASSOC);
 
