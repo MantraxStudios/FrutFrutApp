@@ -166,7 +166,7 @@ class MainActivity : ComponentActivity() {
                             }
                         }
 
-                        // Menú de videos
+                        /*
                         Box(
                             modifier = Modifier
                                 .align(Alignment.TopEnd)
@@ -239,6 +239,7 @@ class MainActivity : ComponentActivity() {
                                 }
                             }
                         }
+                        */
 
                         // Texto del canal en la esquina inferior derecha
                         selectedChannel?.let { channel ->
@@ -253,7 +254,7 @@ class MainActivity : ComponentActivity() {
                                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                                     modifier = Modifier
                                         .background(
-                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.8f),
+                                            MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.0f),
                                             shape = MaterialTheme.shapes.small
                                         )
                                         .padding(horizontal = 8.dp, vertical = 4.dp)
