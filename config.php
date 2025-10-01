@@ -2,14 +2,14 @@
 $entorno = 0; // Cambia a 1 para producción
 
 if ($entorno === 1) {
-    $host = "localhost";
-    $db   = "srcardbo_vds";
-    $user = "srcardbo_vdsuser";
-    $pass = "46.oL7?Me12W";
+    $host = "";
+    $db   = "";
+    $user = "";
+    $pass = "";
 } else {
-    $host = "localhost";
-    $db   = "sdrv";
-    $user = "root";
+    $host = "";
+    $db   = "";
+    $user = "";
     $pass = "";
 }
 
@@ -29,3 +29,4 @@ try {
     die("Error de conexión: " . $e->getMessage());
 }
 ?>
+
