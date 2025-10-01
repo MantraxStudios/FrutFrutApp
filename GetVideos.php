@@ -1,20 +1,31 @@
 <?php
 header('Content-Type: application/json; charset=utf-8');
-
-require 'db.php'; 
+require 'config.php'; 
 
 try {
-    $stmt = $pdo->query("SELECT id, nombre, ruta, duracion FROM videos ORDER BY id ASC");
-    $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+    $channel = isset($_GET['channel']) ? trim($_GET['channel']) : null;
 
-    $result = [];
-    foreach ($videos as $v) {
-        $result[] = [
-            'nombre'   => $v['nombre'],
-            'ruta'     => $v['ruta'],
-            'duracion' => (int)$v['duracion'],
-            'id' => (int)$v['id'],
-        ];
+    if ($channel !== null && $channel !== '') {
+        $stmt = $pdo->prepare("SELECT id, nombre, ruta, duracion, Channel 
+                               FROM videos 
+                               WHERE Channel = :channel 
+                               ORDER BY id ASC");
+        $stmt->execute(['channel' => $channel]);
+
+        $videos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $result = [];
+        foreach ($videos as $v) {
+            $result[] = [
+                'id'       => (int)$v['id'],
+                'nombre'   => $v['nombre'],
+                'ruta'     => $v['ruta'],
+                'duracion' => (int)$v['duracion'],
+                'channel'  => $v['Channel'],
+            ];
+        }
+    } else {
+        $result = [];
     }
 
     echo json_encode($result, JSON_UNESCAPED_UNICODE | JSON_PRETTY_PRINT);
